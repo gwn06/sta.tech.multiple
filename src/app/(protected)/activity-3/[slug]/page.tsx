@@ -1,24 +1,24 @@
 import { getFoodReviewBy } from "@/app/actions";
 import { FoodReview } from "../components/food_review";
-import { createClient as supabseClient } from "@/utils/supabase/client";
+// import { createClient as supabseClient } from "@/utils/supabase/client";
 import FoodReviewCard from "../components/food-review-card";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 import { Suspense } from "react";
 import ReviewCard from "../components/review-card";
 
-export const revalidate = 60;
-export const dynamicParams = true;
+// export const revalidate = 60;
+// export const dynamicParams = true;
 
-export async function generateStaticParams() {
-  const supabase = supabseClient();
-  const { data } = await supabase
-    .from("food_review")
-    .select("*")
-    .order("name", { ascending: true });
+// export async function generateStaticParams() {
+//   const supabase = supabseClient();
+//   const { data } = await supabase
+//     .from("food_review")
+//     .select("*")
+//     .order("name", { ascending: true });
 
-  return data?.map((food) => ({ slug: food.slug }));
-}
+//   return data?.map((food) => ({ slug: food.slug }));
+// }
 
 export default async function Page({
   params,
