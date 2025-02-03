@@ -255,8 +255,8 @@ export async function getFoodReviewBy(slug: string) {
     return null;
   }
 
-  const orderedReviews = data.food_review_reviews.sort((a, b) => {
-    return new Date(b.created_at) - new Date(a.created_at); // Change 'created_at' as needed
+  const orderedReviews = data.food_review_reviews.sort((a: { created_at: string }, b: { created_at: string }) => {
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
   // Attach ordered reviews back to the data object

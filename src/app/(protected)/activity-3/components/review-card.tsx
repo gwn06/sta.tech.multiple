@@ -90,7 +90,7 @@ export default function ReviewCard({
         </div>
         <div className="flex flex-row space-x-2">
           <div className="w-10 h-10 rounded-xl bg-gray-800 text-white justify-center items-center flex">
-            {user.email[0].toUpperCase()}
+            {(user.email?.[0] ?? "?").toUpperCase()}
           </div>
           <textarea
             className="w-full p-2 border border-gray-300 rounded-md"
