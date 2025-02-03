@@ -22,7 +22,7 @@ export default function MarkdownApp({ userId }: { userId: string }) {
 
   useEffect(() => {
     async function fetchMarkdowns() {
-      const { data, error } = await supabase.from("markdowns").select("*");
+      const { data, error } = await supabase.from("markdowns").select("*").order("inserted_at", {ascending: false});
       if (data && !error) {
         setMarkdownList([...data]);
       }
