@@ -1,6 +1,7 @@
 "use client";
 import { createClient } from "@/utils/supabase/client";
 import { useState, useEffect } from "react";
+import { handleAddTodo } from "../utils/todoHelpers";
 
 interface Todo {
   id?: number;
@@ -31,28 +32,28 @@ export default function TodoApp({ userId }: { userId: string }) {
     fetchTodos();
   }, [supabase]);
 
-  const handleAddTodo = async () => {
-    if (todo.trim() === "") return;
-    const newTodo: Todo = {
-      is_complete: false,
-      task: todo,
-      user_id: userId,
-    };
+  // const handleAddTodo = async () => {
+  //   if (todo.trim() === "") return;
+  //   const newTodo: Todo = {
+  //     is_complete: false,
+  //     task: todo,
+  //     user_id: userId,
+  //   };
 
-    const { data, error } = await supabase
-      .from("staclara_todos")
-      .insert([newTodo])
-      .select()
-      .single();
+  //   const { data } = await supabase
+  //     .from("staclara_todos")
+  //     .insert([newTodo])
+  //     .select()
+  //     .single();
 
-    console.log(error);
+  //   // console.log(error);
 
-    if (data !== null) {
-      const newTodoResponse: Todo = data;
-      setTodos([newTodoResponse, ...todos]);
-      setTodo("");
-    }
-  };
+  //   if (data !== null) {
+  //     const newTodoResponse: Todo = data;
+  //     setTodos([newTodoResponse, ...todos]);
+  //     setTodo("");
+  //   }
+  // };
 
   const handleEditTodo = async (id: number) => {
     const updatedTask = prompt("Update task");
@@ -110,7 +111,7 @@ export default function TodoApp({ userId }: { userId: string }) {
           className="border-2 p-2 rounded-md mr-2 w-80"
         />
         <button
-          onClick={handleAddTodo}
+          onClick={() => handleAddTodo(supabase, todo, userId, todos, setTodos, setTodo)}
           className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md"
         >
           Add

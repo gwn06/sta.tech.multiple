@@ -15,6 +15,13 @@ const nextConfig: NextConfig = {
         pathname: '/storage/v1/object/public/**',
         search: '',
       },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+        port: '',
+        pathname: '/PokeAPI/sprites/master/sprites/pokemon/**',
+        search: '',
+      },
     ],
   },
 };

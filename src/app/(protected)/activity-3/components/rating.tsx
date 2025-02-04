@@ -24,7 +24,6 @@ const Rating = ({
     setUserRating!(value);
   };
 
-  console.log("update rating", rating);
   return (
     <div className="flex justify-center">
       {[1, 2, 3, 4, 5].map((value) => (

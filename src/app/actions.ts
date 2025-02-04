@@ -255,9 +255,13 @@ export async function getFoodReviewBy(slug: string) {
     return null;
   }
 
-  const orderedReviews = data.food_review_reviews.sort((a: { created_at: string }, b: { created_at: string }) => {
-    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-  });
+  const orderedReviews = data.food_review_reviews.sort(
+    (a: { created_at: string }, b: { created_at: string }) => {
+      return (
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    }
+  );
 
   // Attach ordered reviews back to the data object
   data.food_review_reviews = orderedReviews;
@@ -289,4 +293,52 @@ export async function deleteFoodReviewAction(id: number, image_path: string) {
 
   revalidatePath("/activity-3");
   redirect("/activity-3");
+}
+
+export async function getPokemons(searchQuery: string, sortBy: string, sort: string) {
+  const supabase = await createClient();
+  const pageNumber = 1;
+  const limit = 18;
+  const offset = (pageNumber - 1) * limit;
+  let query =  supabase
+    .from("pokemons")
+    .select("*")
+    .order(sortBy, { ascending: sort === "asc" })
+    .limit(limit)
+    .range(offset, offset + limit - 1);
+
+
+  if (searchQuery.length > 0)  { query = query.ilike('name', `%${searchQuery}%`) }
+
+  const {data, error} = await query;
+
+  if (!data || error) {
+    return [];
+  }
+
+  return data;
+}
+
+export async function getPokemonReviewsBy(name:string) {
+  const supabase = await createClient();
+  const { data } = await supabase
+    .from("pokemons")
+    .select("*, pokemons_reviews (*)")
+    .eq("name", name)
+    .single();
+
+    
+  const orderedReviews = data.pokemons_reviews.sort(
+    (a: { inserted_at: string }, b: { inserted_at: string }) => {
+      return (
+        new Date(b.inserted_at).getTime() - new Date(a.inserted_at).getTime()
+      );
+    });
+
+  if (!data) {
+    return null;
+  }
+
+  data.pokemons_reviews = orderedReviews;
+  return data;
 }

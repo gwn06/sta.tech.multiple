@@ -1,38 +1,34 @@
-"use client";
-import { type User } from "@supabase/supabase-js";
-import { use, useState } from "react";
-import { FoodReview, FoodReviewReviews } from "./food_review";
-import Rating from "./rating";
-import { createClient } from "@/utils/supabase/client";
+"use client"
+import { User } from "@supabase/supabase-js";
+import { PokemonData, PokemonReview } from "../../types/types";
 import { useRouter } from "next/navigation";
+import { createClient } from "@/utils/supabase/client";
+import { useState } from "react";
+import Rating from "@/app/(protected)/activity-3/components/rating";
 
-export default function ReviewCard({
-  user,
-  foodReviewPromise,
-}: {
-  user: User;
-  foodReviewPromise: Promise<FoodReview>;
-}) {
+interface PokemonReviewsCardListProps {
+    user: User;
+    pokemonData: PokemonData;
+}
+
+export default function PokemonReviewsCardList({user, pokemonData}: PokemonReviewsCardListProps) {
   const router = useRouter();
   const supabase = createClient();
-  const foodReview = use(foodReviewPromise);
 
-  const findUserFoodReview = () =>
-    foodReview.food_review_reviews.find((review) => review.user_id === user.id);
-  const userReview = findUserFoodReview();
-
+  const findUserPokemonReview = () =>
+    pokemonData.pokemons_reviews.find((review) => review.user_id === user.id);
+  const userReview = findUserPokemonReview();
+  
   const [comment, setComment] = useState(userReview?.review ?? "");
   const [userRating, setUserRating] = useState(userReview?.rating ?? 0);
+  const [reviewsList, setReviewsList] = useState( pokemonData.pokemons_reviews);
 
-  const [reviewsList, setReviewsList] = useState(
-    foodReview.food_review_reviews
-  );
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (comment.trim() && userRating !== 0) {
       const userReviewToUpsert = {
-        food_review_id: foodReview.id,
+        pokemon_id: pokemonData.id,
         user_id: user.id,
         review: comment,
         email: user.email,
@@ -43,7 +39,7 @@ export default function ReviewCard({
         Object.assign(userReviewToUpsert, { id: userReview.id });
       }
       const { data } = await supabase
-        .from("food_review_reviews")
+        .from("pokemons_reviews")
         .upsert(userReviewToUpsert)
         .select()
         .single();
@@ -61,13 +57,14 @@ export default function ReviewCard({
     }
   };
 
-  const handleDeleteReview = async (review: FoodReviewReviews) => {
-    await supabase.from("food_review_reviews").delete().eq("id", review.id);
+
+  const handleDeleteReview = async (review: PokemonReview) => {
+    await supabase.from("pokemons_reviews").delete().eq("id", review.id);
     setReviewsList((prevReviews) => {
       const filteredReviews = prevReviews.filter((r) => r.id !== review.id);
       return [...filteredReviews].sort(
         (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          new Date(b.inserted_at).getTime() - new Date(a.inserted_at).getTime()
       );
     });
 
@@ -109,7 +106,7 @@ export default function ReviewCard({
       </form>
       <div className="mt-4">
         <h3 className="text-lg font-semibold text-left">Reviews</h3>
-        {foodReview.food_review_reviews.length === 0 && (
+        {reviewsList?.length === 0 && (
           <div className="w-full flex items-center justify-center font-bold h-52">
             Empty
           </div>
