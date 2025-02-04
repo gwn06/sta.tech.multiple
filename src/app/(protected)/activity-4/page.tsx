@@ -17,7 +17,7 @@ export default async function Activitiy4(props: {
 
   return (
     <div className="max-w-full text-center mx-auto mt-4">
-      <h1 className="text-2xl font-bold mb-2">Google Drive lite</h1>
+      <h1 className="text-2xl font-bold mb-2">Pokemon Review App</h1>
       <Search />
       <Suspense fallback={<div>Loading...</div>}>
       <PokemonsView pokemonsPromise={pokemons} />
