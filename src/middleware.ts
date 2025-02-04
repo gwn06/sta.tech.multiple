@@ -19,5 +19,7 @@ export const config = {
     "/activity-3",
     "/activity-4",
     "/activity-5",
+    "/sign-in",
+    "/sign-up"
   ],
 };

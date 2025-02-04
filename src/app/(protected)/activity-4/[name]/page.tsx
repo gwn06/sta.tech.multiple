@@ -19,7 +19,7 @@ export default async function PokemonReview({
 
   const name = (await params).name;
   const pokemonData: PokemonData = await getPokemonReviewsBy(name);
-  console.log(pokemonData)
+  // console.log(pokemonData)
 
   return (
     <div className="max-w-full text-center mx-auto bg-slate-50 h-full">
