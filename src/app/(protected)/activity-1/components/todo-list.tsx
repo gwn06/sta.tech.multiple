@@ -1,7 +1,12 @@
 "use client";
 import { createClient } from "@/utils/supabase/client";
 import { useState, useEffect } from "react";
-import { handleAddTodo } from "../utils/todoHelpers";
+import {
+  handleAddTodo,
+  handleEditTodo,
+  handleRemoveTodo,
+  toggleTodoStatus,
+} from "../utils/todoHelpers";
 
 interface Todo {
   id?: number;
@@ -19,7 +24,7 @@ export default function TodoApp({ userId }: { userId: string }) {
 
   useEffect(() => {
     async function fetchTodos() {
-        setLoading(true);
+      setLoading(true);
       const { data } = await supabase
         .from("staclara_todos")
         .select("*")
@@ -55,49 +60,49 @@ export default function TodoApp({ userId }: { userId: string }) {
   //   }
   // };
 
-  const handleEditTodo = async (id: number) => {
-    const updatedTask = prompt("Update task");
-    if (updatedTask === null || updatedTask.trim() === "") return;
+  // const handleEditTodo = async (id: number) => {
+  //   const updatedTask = prompt("Update task");
+  //   if (updatedTask === null || updatedTask.trim() === "") return;
 
-    const { data } = await supabase
-      .from("staclara_todos")
-      .update({ task: updatedTask })
-      .eq("id", id)
-      .select();
+  //   const { data } = await supabase
+  //     .from("staclara_todos")
+  //     .update({ task: updatedTask })
+  //     .eq("id", id)
+  //     .select();
 
-    if (data === null) return;
+  //   if (data === null) return;
 
-    const updatedTodos = todos.map((todo) =>
-      todo.id === id ? { ...todo, task: updatedTask } : todo
-    );
-    setTodos(updatedTodos);
-  };
+  //   const updatedTodos = todos.map((todo) =>
+  //     todo.id === id ? { ...todo, task: updatedTask } : todo
+  //   );
+  //   setTodos(updatedTodos);
+  // };
 
-  const handleRemoveTodo = async (id: number) => {
-    const { error } = await supabase
-      .from("staclara_todos")
-      .delete()
-      .eq("id", id);
-    if (error) return;
+  // const handleRemoveTodo = async (id: number) => {
+  //   const { error } = await supabase
+  //     .from("staclara_todos")
+  //     .delete()
+  //     .eq("id", id);
+  //   if (error) return;
 
-    const updatedTodos = todos.filter((todo) => todo.id !== id);
-    setTodos(updatedTodos);
-  };
+  //   const updatedTodos = todos.filter((todo) => todo.id !== id);
+  //   setTodos(updatedTodos);
+  // };
 
-  const toggleTodoStatus = async (id: number, status: boolean) => {
-    const { data } = await supabase
-      .from("staclara_todos")
-      .update({ is_complete: !status })
-      .eq("id", id)
-      .select();
+  // const toggleTodoStatus = async (id: number, status: boolean) => {
+  //   const { data } = await supabase
+  //     .from("staclara_todos")
+  //     .update({ is_complete: !status })
+  //     .eq("id", id)
+  //     .select();
 
-    if (data === null) return;
+  //   if (data === null) return;
 
-    const updatedTodos = todos.map((todo) =>
-      todo.id === id ? { ...todo, is_complete: !todo.is_complete } : todo
-    );
-    setTodos(updatedTodos);
-  };
+  //   const updatedTodos = todos.map((todo) =>
+  //     todo.id === id ? { ...todo, is_complete: !todo.is_complete } : todo
+  //   );
+  //   setTodos(updatedTodos);
+  // };
 
   return (
     <div className="">
@@ -111,21 +116,26 @@ export default function TodoApp({ userId }: { userId: string }) {
           className="border-2 p-2 rounded-md mr-2 w-80"
         />
         <button
-          onClick={() => handleAddTodo(supabase, todo, userId, todos, setTodos, setTodo)}
+          onClick={() =>
+            handleAddTodo(supabase, todo, userId, todos, setTodos, setTodo)
+          }
           className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-md"
         >
           Add
         </button>
       </div>
-        {loading && <p>Loading...</p>}
+      {loading && <p>Loading...</p>}
       <ul className="list-none w-96">
         {todos.map((todo) => (
-          <li key={todo.id} className="flex items-center justify-between p-1 mb-2 border-b">
+          <li
+            key={todo.id}
+            className="flex items-center justify-between p-1 mb-2 border-b"
+          >
             <input
               className="h-6 w-6"
               type="checkbox"
               checked={todo.is_complete}
-              onChange={() => toggleTodoStatus(todo.id!, todo.is_complete)}
+              onChange={() => toggleTodoStatus(supabase, todo.id!, todo.is_complete, todos, setTodos)}
             />
             <span className={todo.is_complete ? " line-through" : ""}>
               {todo.task}
@@ -133,13 +143,13 @@ export default function TodoApp({ userId }: { userId: string }) {
 
             <div>
               <button
-                onClick={() => handleEditTodo(todo.id!)}
+                onClick={() => handleEditTodo(supabase,todo.id!, todos, setTodos)}
                 className="hover:bg-orange-500 hover:text-white rounded-md p-2 transition-all ease-in-out duration-100"
               >
                 Edit
               </button>
               <button
-                onClick={() => handleRemoveTodo(todo.id!)}
+                onClick={() => handleRemoveTodo(supabase, todo.id!, todos, setTodos)}
                 className="hover:bg-red-500 hover:text-white rounded-md p-2 transition-all ease-in-out duration-100"
               >
                 Remove

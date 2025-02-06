@@ -1,51 +1,64 @@
-
+import "@testing-library/jest-dom";
 import { render, screen, fireEvent } from "@testing-library/react";
-import Activity2 from "@/app/(protected)/activity-2/page";
+import Page from "@/app/(protected)/activity-2/page";
 import { createClient } from "@/utils/supabase/server";
-import { redirect } from "next/navigation";
+import {
+  redirect,
+  useSearchParams,
+  usePathname,
+  useRouter,
+} from "next/navigation";
+import { getDriveliteImages } from "@/app/actions";
+import { use } from "react";
 
-// Mock environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
 process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = "example-anon-key";
 
 // Mock the Supabase client
 jest.mock("@/utils/supabase/server", () => ({
-  createClient: jest.fn().mockImplementation(() => ({
-    auth: {
-      getUser: jest.fn(),
-    },
-    from: jest.fn().mockReturnValue({
-      insert: jest.fn(),
-      select: jest.fn(),
-    }),
-  })),
+  createClient: jest.fn(),
 }));
 
+jest.mock("react", () => ({
+  use: jest.fn(),
+}));
 
-
-// Mock next/navigation
 jest.mock("next/navigation", () => ({
+  useSearchParams: jest.fn().mockReturnValue({
+    get: jest.fn(),
+  }),
+  usePathname: jest.fn(),
+  useRouter: jest.fn().mockReturnValue({
+    replace: jest.fn(),
+  }),
   redirect: jest.fn(),
 }));
 
-describe("Activity 2 Google Drive lite test", () => {
+jest.mock("@/app/actions", () => ({
+  getDriveliteImages: jest.fn(),
+}));
+
+describe("Activity 2 signed out user", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    (createClient as jest.Mock).mockClear();
   });
 
-  it("redirects to sign-in when no user found", async () => {
+  it("redirects to sign-in when no user", async () => {
     const mockSupabase = {
       auth: {
         getUser: jest
           .fn()
-          .mockResolvedValue({ data: { user: { id: null } }, error: true }),
+          .mockResolvedValue({ data: { user: { id: null } }, error: false }),
       },
     };
     (createClient as jest.Mock).mockResolvedValue(mockSupabase);
+    render(await Page({}));
 
-    await Activity2({});
-
+    expect(useSearchParams).toHaveBeenCalled();
+    expect(usePathname).toHaveBeenCalled();
+    expect(useRouter).toHaveBeenCalled();
+    expect(getDriveliteImages).toHaveBeenCalled();
+    expect(use).toHaveBeenCalled();
     expect(redirect).toHaveBeenCalledWith("/sign-in");
   });
-
 });

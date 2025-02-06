@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import Page from "@/app/(protected)/activity-1/page";
 import { createClient } from "@/utils/supabase/server";
 import { redirect } from "next/navigation";
-import { handleAddTodo } from "@/app/(protected)/activity-1/utils/todoHelpers";
+import { handleAddTodo, handleEditTodo, handleRemoveTodo } from "@/app/(protected)/activity-1/utils/todoHelpers";
 
 // Mock environment variables
 process.env.NEXT_PUBLIC_SUPABASE_URL = "https://example.supabase.co";
@@ -24,6 +24,8 @@ jest.mock("@/utils/supabase/server", () => ({
 
 jest.mock("@/app/(protected)/activity-1/utils/todoHelpers", () => ({
   handleAddTodo: jest.fn(),
+  handleRemoveTodo: jest.fn(),
+  handleEditTodo: jest.fn(),
 }));
 
 // Mock next/navigation
@@ -31,11 +33,7 @@ jest.mock("next/navigation", () => ({
   redirect: jest.fn(),
 }));
 
-describe("Activity 1 To-do list test", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
+describe("Activity 1 signed out user", () => {
   it("redirects to sign-in when no user", async () => {
     const mockSupabase = {
       auth: {
@@ -45,78 +43,182 @@ describe("Activity 1 To-do list test", () => {
       },
     };
     (createClient as jest.Mock).mockResolvedValue(mockSupabase);
-
     await Page();
 
     expect(redirect).toHaveBeenCalledWith("/sign-in");
   });
+});
 
-
-
-
-  it("renders todo list when user is authenticated", async () => {
-    const mockUser = { id: "123" };
+describe("Todo app signed in user", () => {
+  beforeEach(async () => {
     const mockSupabase = {
       auth: {
         getUser: jest.fn().mockResolvedValue({
-          data: { user: mockUser },
-          error: null,
+          data: { user: { id: "validUserID" } },
+          error: false,
         }),
       },
-      from: jest.fn().mockReturnValue({
-        select: jest.fn().mockResolvedValue({ data: [], error: null }),
-        insert: jest.fn().mockResolvedValue({
-          data: [{ task: "New Todo Item" }],
-          error: null,
-        }),
-      }),
     };
     (createClient as jest.Mock).mockResolvedValue(mockSupabase);
+    render(await Page());
+  });
 
-    const { container } = render(await Page());
-
+  it("renders todo list correctly", () => {
     expect(screen.getByText("To-do List Supabase")).toBeInTheDocument();
-    expect(container.firstChild).toHaveClass("max-w-md");
+  });
+  it("adds new todo item and updates UI", async () => {
+    // Mock handleAddTodo to simulate successful insert
+    (handleAddTodo as jest.Mock).mockImplementation(
+      (_, text, userId, todos, setTodos, setTodo) => {
+        const newTodo = {
+          id: 1,
+          task: text,
+          user_id: userId,
+          is_complete: false,
+          created_at: new Date().toISOString(),
+        };
+        setTodos([...todos, newTodo]);
+        setTodo("");
+        return Promise.resolve({ data: newTodo, error: null });
+      }
+    );
+
+    const input = screen.getByPlaceholderText("Enter a task");
+    fireEvent.change(input, { target: { value: "New Todo Item" } });
+    fireEvent.click(screen.getByText("Add"));
+
+    expect(handleAddTodo).toHaveBeenCalledWith(
+      expect.any(Object),
+      "New Todo Item",
+      "validUserID",
+      [],
+      expect.any(Function),
+      expect.any(Function)
+    );
+
+    // Wait for the todo to appear in the UI
+    const newTodoElement = await screen.findByText("New Todo Item");
+    expect(newTodoElement).toBeInTheDocument();
+
+    // Verify input is cleared
+    expect(input).toHaveValue("");
+  });
+
+
+  it("adds new todo item and delete todo ", async () => {
+    const newTodo = {
+        id: 1,
+        task: "New Todo Item",
+        user_id: "validUserID",
+        is_complete: false,
+        created_at: new Date().toISOString(),
+    };
+    // Mock handleAddTodo to simulate successful insert
+    (handleAddTodo as jest.Mock).mockImplementation(
+      (_, text, userId, todos, setTodos, setTodo) => {
+        setTodos([...todos, newTodo]);
+        setTodo("");
+        return Promise.resolve({ data: newTodo, error: null });
+      }
+    );
+    (handleRemoveTodo as jest.Mock).mockImplementation(
+      (_, userId, todos, setTodos) => {
+        const updatedTodos = todos.filter((todo) => todo.id !== userId);
+        setTodos(updatedTodos);
+        return Promise.resolve({  error: null });
+      }
+    );
+
+    const input = screen.getByPlaceholderText("Enter a task");
+    fireEvent.change(input, { target: { value: "New Todo Item" } });
+    fireEvent.click(screen.getByText("Add"));
+
+    expect(handleAddTodo).toHaveBeenCalledWith(
+      expect.any(Object),
+      "New Todo Item",
+      "validUserID",
+      [],
+      expect.any(Function),
+      expect.any(Function)
+    );
+
+    // Wait for the todo to appear in the UI
+    const newTodoElement = await screen.findByText("New Todo Item");
+    expect(newTodoElement).toBeInTheDocument();
+    // Verify input is cleared
+    expect(input).toHaveValue("");
+
+
+    fireEvent.click(screen.getByText("Remove"));
+    expect(handleRemoveTodo).toHaveBeenCalledWith(
+      expect.any(Object),
+      1,
+      [newTodo],
+      expect.any(Function),
+    );
+
+
+    expect(screen.queryByText(newTodo.task)).toBeNull();
   });
 
 
 
-
-  it("allows adding a new todo", async () => {
-    const mockUser = { id: "123" };
-    const mockSupabase = {
-      auth: {
-        getUser: jest.fn().mockResolvedValue({
-          data: { user: mockUser },
-          error: null,
-        }),
-      },
+  it("adds new todo item and edit todo todo ", async () => {
+    const newTodo = {
+        id: 1,
+        task: "New Todo Item",
+        user_id: "validUserID",
+        is_complete: false,
+        created_at: new Date().toISOString(),
     };
-    (createClient as jest.Mock).mockResolvedValue(mockSupabase);
-
-    render(await Page());
+    // Mock handleAddTodo to simulate successful insert
+    (handleAddTodo as jest.Mock).mockImplementation(
+      (_, text, userId, todos, setTodos, setTodo) => {
+        setTodos([...todos, newTodo]);
+        setTodo("");
+        return Promise.resolve({ data: newTodo, error: null });
+      }
+    );
+    (handleEditTodo as jest.Mock).mockImplementation(
+      (_, id, todos, setTodos) => {
+        const updatedTask = "Updated todo";
+        const updatedTodos = todos.map((todo) =>
+            todo.id === id ? { ...todo, task: updatedTask } : todo
+        );
+        setTodos(updatedTodos);
+        return Promise.resolve({data: updatedTask,  error: null });
+      }
+    );
 
     const input = screen.getByPlaceholderText("Enter a task");
     fireEvent.change(input, { target: { value: "New Todo Item" } });
-
-    // handleAddTodo.mockImplementation(() =>
-    //   Promise.resolve({
-    //     task: "New Todo Item",
-    //     is_complete: false,
-    //     user_id: "123",
-    //   })
-    // );
-
-    const addButton = screen.getByText("Add");
-    fireEvent.click(addButton);
+    fireEvent.click(screen.getByText("Add"));
 
     expect(handleAddTodo).toHaveBeenCalledWith(
-      expect.any(Object), // supabase instance
-      "New Todo Item", // todo text
-      "123", // user ID
-      [], // current todos array
-      expect.any(Function), // setTodos function
-      expect.any(Function) // setTodo function
+      expect.any(Object),
+      "New Todo Item",
+      "validUserID",
+      [],
+      expect.any(Function),
+      expect.any(Function)
     );
+
+    // Wait for the todo to appear in the UI
+    const newTodoElement = await screen.findByText("New Todo Item");
+    expect(newTodoElement).toBeInTheDocument();
+    // Verify input is cleared
+    expect(input).toHaveValue("");
+
+
+    fireEvent.click(screen.getByText("Edit"));
+    expect(handleEditTodo).toHaveBeenCalledWith(
+      expect.any(Object),
+      1,
+      [newTodo],
+      expect.any(Function),
+    );
+
+
+    expect(await screen.findByText("Updated todo")).toBeInTheDocument();
   });
 });
